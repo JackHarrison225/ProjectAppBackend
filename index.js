@@ -26,7 +26,6 @@ app.get("/username/:usernameValue", async (req, res) =>
 {
      const value = req.params.usernameValue
      const user = await User.findOne({ Username: value });
-     console.log("Potato")
      if(user)
      {
           res.send(true)
@@ -48,7 +47,6 @@ app.post("/signup", async (req, res) => {
      console.log(newUser)
      const user = new User(newUser);
      console.log("Created an user")
-     console.log(user)
      await user.save();
      res.send({ message: "New User Created." });
 });
