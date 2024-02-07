@@ -56,9 +56,10 @@ app.post("/signup", async (req, res) => {
 app.post("/auth", async (req, res) => {
      console.log("arrived");
      console.log(req.body);
-     const user = await User.findOne({ username: req.body.username });
+     const user = await User.findOne({ Username: req.body.Username });
      if (!user) 
      {
+          console.log("No User")
           return res.sendStatus(403);
      }
 
@@ -70,6 +71,7 @@ app.post("/auth", async (req, res) => {
      }
      // code to generate token
      user.Token = uuidv4();
+     console.log("Make token")
      await user.save();
      res.send({ Token: user.Token });
      //create expiredate
@@ -80,7 +82,9 @@ app.post("/auth", async (req, res) => {
 //##### Authorization middleware ######//
 app.use(async (req, res, next) => {
      const authHeader = req.headers["authorization"];
+     
      const user = await User.findOne({ token: authHeader });
+     console.log(user)
      if (user) 
      {
           //check expiredate 
