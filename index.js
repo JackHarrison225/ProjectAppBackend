@@ -1,10 +1,16 @@
 const express = require("express");
 const mongoose = require("mongoose");
+
 const { Project } = require("./models/project");
 const { User } = require("./models/user");
 const { v4: uuidv4 } = require("uuid");
+
 require("dotenv").config();
+
 const cors = require("cors");
+
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
 mongoose
   .connect(process.env.CONNECTION_STRING)
@@ -42,13 +48,25 @@ app.get("/username/:usernameValue", async (req, res) =>
 //############ create user ############//
 app.post("/signup", async (req, res) => {
      let newUser = req.body;
-     newUser.PFP = ""
-     newUser.Bio = "Bio"
-     console.log(newUser)
-     const user = new User(newUser);
-     console.log("Created an user")
-     await user.save();
-     res.send({ message: "New User Created." });
+     
+     let Password = req.body.Password
+     
+     bcrypt.genSalt(saltRounds, function(err, salt) {  
+          bcrypt.hash(Password, salt, async function(err, hash) {
+          newUser.Password = hash
+          console.log(hash)
+          console.log(newUser.Password)
+          newUser.PFP = ""
+          newUser.Bio = "Bio"
+          console.log(newUser)
+          const user = new User(newUser);
+          console.log("Created an user")
+          await user.save();
+          res.send({ message: "New User Created." });
+          });
+     });
+     
+     
 });
 //#####################################//
 
@@ -62,9 +80,13 @@ app.post("/auth", async (req, res) => {
           console.log("No User")
           return res.sendStatus(403);
      }
+     const Input = req.body.Password
+     const Database = user.Password
+     let matchPass = await bcrypt.compare(Input, Database);
+     
 
      // do not store password in plain text
-     if (req.body.Password !== user.Password) 
+     if (!matchPass) 
      {
           console.log("wrong password");
           return res.sendStatus(403);
@@ -84,7 +106,6 @@ app.use(async (req, res, next) => {
      const authHeader = req.headers["authorization"];
      
      const user = await User.findOne({ token: authHeader });
-     console.log(user)
      if (user) 
      {
           //check expiredate 
