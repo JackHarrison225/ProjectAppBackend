@@ -21,7 +21,6 @@ mongoose
     console.log("Error connecting to MongoDB", err.message);
   });
 
-// defining the Express app
 const app = express();
 
 app.use(cors());
@@ -45,6 +44,24 @@ app.get("/username/:usernameValue", async (req, res) =>
 })
 //#####################################//
 
+//########### CheckToken ##############//
+app.get("/Token/:token", async (req, res) =>
+{
+     const value = req.params.token
+     const token = await User.findOne({ Token: value });
+     if(token)
+     {
+          res.send(true)
+          // return true
+     }
+     else
+     {
+          res.send(false)
+          // return false
+     }
+})
+//#####################################//
+
 //############ create user ############//
 app.post("/signup", async (req, res) => {
      let newUser = req.body;
@@ -54,13 +71,10 @@ app.post("/signup", async (req, res) => {
      bcrypt.genSalt(saltRounds, function(err, salt) {  
           bcrypt.hash(Password, salt, async function(err, hash) {
           newUser.Password = hash
-          console.log(hash)
-          console.log(newUser.Password)
           newUser.PFP = ""
           newUser.Bio = "Bio"
-          console.log(newUser)
           const user = new User(newUser);
-          console.log("Created an user")
+          console.log("Created a user")
           await user.save();
           res.send({ message: "New User Created." });
           });
@@ -72,12 +86,10 @@ app.post("/signup", async (req, res) => {
 
 //# Authorization generation endpoint #//
 app.post("/auth", async (req, res) => {
-     console.log("arrived");
-     console.log(req.body);
+     console.log("User arrived");
      const user = await User.findOne({ Username: req.body.Username });
      if (!user) 
      {
-          console.log("No User")
           return res.sendStatus(403);
      }
      const Input = req.body.Password
@@ -95,7 +107,7 @@ app.post("/auth", async (req, res) => {
      user.Token = uuidv4();
      console.log("Make token")
      await user.save();
-     res.send({ Token: user.Token });
+     res.send({Token: user.Token})
      //create expiredate
      //user.ExpireDate = new Date
 });
@@ -103,13 +115,15 @@ app.post("/auth", async (req, res) => {
 
 //##### Authorization middleware ######//
 app.use(async (req, res, next) => {
+     console.log("AuthCall")
      const authHeader = req.headers["authorization"];
-     
-     const user = await User.findOne({ token: authHeader });
+     const user = await User.findOne({ Token: authHeader });
      if (user) 
      {
+          console.log("Token Works")
+          console.log(authHeader)
           //check expiredate 
-          //if fine next 
+          //if fine next
           //if not remove token 
           next();
      } 
@@ -119,7 +133,7 @@ app.use(async (req, res, next) => {
 });
 //#####################################//
 
-//######## PROJECT STUFF HERE #########//
+//###### Project Administration #######//
 
 //#####################################//
 
