@@ -134,7 +134,16 @@ app.use(async (req, res, next) => {
 //#####################################//
 
 //###### Project Administration #######//
+app.post("/CreateProject", async (req, res) => {
+     let newProject = req.body;
+     console.log(newProject)
 
+     const projects = new Projects(newProject);
+     console.log("Created a new project")
+
+     await projects.save();
+     res.send({ message: "New Project Created." });
+});
 //#####################################//
 
 //####### starting the server #########//
