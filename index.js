@@ -47,17 +47,18 @@ app.get("/username/:usernameValue", async (req, res) =>
 //########### CheckToken ##############//
 app.get("/Token/:token", async (req, res) =>
 {
+     console.log("Checking Token")
      const value = req.params.token
      const token = await User.findOne({ Token: value });
-     if(token)
+     if(!token)
      {
-          res.send(true)
-          // return true
+          res.send(false)
+          // return false         
      }
      else
      {
-          res.send(false)
-          // return false
+          res.send(true)
+          // return true
      }
 })
 //#####################################//
@@ -120,11 +121,12 @@ app.use(async (req, res, next) => {
      const user = await User.findOne({ Token: authHeader });
      if (user) 
      {
-          console.log("Token Works")
-          console.log(authHeader)
+          console.log("Valid Token")
+          
           //check expiredate 
           //if fine next
           //if not remove token 
+
           next();
      } 
      else {
@@ -134,7 +136,25 @@ app.use(async (req, res, next) => {
 //#####################################//
 
 //###### Project Administration #######//
-
+app.post("/CreateProject", async (req, res) => {
+     let SentToken = req.body.token
+     console.log(SentToken)
+     let owner = await User.findOne({ Token: SentToken });
+     console.log("Owner Object")
+     console.log(owner)
+     const projectObject = {
+          Title: req.body.title,
+          Tags: [...req.body.tags],
+          description: req.body.description,
+          Owners: [owner.Username],
+          Picture: req.body.picture
+     }
+     console.log(projectObject)
+     const project = new Project(projectObject)
+     console.log("Project Created")
+     await project.save();
+     res.send(true)
+});
 //#####################################//
 
 //####### starting the server #########//
