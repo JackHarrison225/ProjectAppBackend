@@ -57,6 +57,7 @@ app.get("/Token/:token", async (req, res) =>
      }
      else
      {
+          console.log("Valid")
           res.send(true)
           // return true
      }
@@ -96,9 +97,7 @@ app.post("/auth", async (req, res) => {
      const Input = req.body.Password
      const Database = user.Password
      let matchPass = await bcrypt.compare(Input, Database);
-     
-
-     
+ 
      if (!matchPass) 
      {
           console.log("wrong password");
@@ -137,6 +136,19 @@ app.use(async (req, res, next) => {
 //#####################################//
   
 //######## User Administration ########//
+app.get("/user/:id", async (req, res) =>{
+     const user = await Project.findById(req.params.id);
+
+     if(user)
+     {
+          res.send(user)
+     }
+     else
+     {
+          res.send(404)
+     }
+})
+
 app.patch("/forgotPassword", async (req, res) => {
      let email = req.body.email
      let username = req.body.username
@@ -146,7 +158,21 @@ app.patch("/forgotPassword", async (req, res) => {
      if(user)
      {
           // create random password 
+          newPassword = generatePassword(() => {
+               x = false
+               let password = ""
+               while(x == false)
+               {    
+                    isRight = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[\W_]).{6}$/g.test(password)
+                    if(isRight)
+                    {
+                         x = true
+                    }
+               }
+               return password
+          })
           // email the new password to the given email
+          // user.password = new password save user
      }
      else
      {
@@ -161,76 +187,142 @@ app.patch("/changeUsername", async(req, res) => {
      let newUsername = req.body.newUsername
 
      const user = await User.findOne({Username: username, Email: email, Password: password})
-
-     user.username = newUsername
-     await user.save()
-
-     const projects = user.Projects
-     
-     for (let i = 0; i < projects.length; i ++)
-     {
-          CurrentProjectId = projects[i]
-          CurrentProject = await Project.findOne({_id: CurrentProjectId})
-          for(let x = 0; x < CurrentProject.Team; x++)
-          {
-               if(CurrentProject.Team[x] == username)
-               {
-                    CurrentProject.Team[x] = newUsername
-                    break
-               }
-               else if( x < CurrentProject.Owners.length)
-               {
-                    if(CurrentProject.Owners[x] == username)
-                    {
-                         CurrentProject.Owners[x] = newUsername
-                         break
-                    }
-               }
-          } 
-          await CurrentProject.save()
+     const newUser = await User.find({Username: newUsername})
+     if(user && !newUser){
+          user.username = newUsername
+          await user.save()
      }
+     else
+     {
+          res.sendStatus(403)
+     }
+
 })
 
 app.patch("/changePassword", async(req, res) => {
-     // patch
-     // if from link take userID
-     // find user with userID and change password to new password
-     // if from profile take username and email and password to change password
-     // find user with username, email check oldpassword and change to new password
-          
+     let email = req.body.email
+     let password = req.body.password
+     let username = req.body.username
+     let newPassword = req.body.newPassword
+
+     const user = await User.findOne({Username: username, Email: email, Password: password})
+     if(user)
+     {
+          user.password = newPassword
+          await user.save()
+     }
+     else
+     {
+          res.sendStatus(403)
+     }
 })
 
 app.patch("/addFriend", async(req, res) => {
-     let username = req.body.username
-     let friend = req.body.user
+     let username = req.body.Username
+     let friend = req.body.Friendname
      let token = req.body.token
 
      let user = await User.findOne({Username: username, Token: token})
+     let newFriend = await User.findOne({Username: friend})
 
-     if(user)
+     if(user && newFriend)
      {
-          user.Friends = [...user.Friends, friend]
+          user.Friends = [...user.Friends, newFriend._id]
+          newFriend.Friends = [...newFriend.Friends, user._id]
+          await user.save()
+          await newFriend.save()
      }
      else
      {
           res.send(403)
      }
+})
+//#####################################//
 
+//###### Project Administration #######//
+app.get("/projects", async(req, res) => {
+     let AllProjects = await Project.find()
+     console.log(AllProjects)
+     res.send(AllProjects)
 })
 
+app.post("/CreateProject", async (req, res) => {
+     let SentToken = req.body.token
+     console.log(SentToken)
+     
+     let owner = await User.findOne({ Token: SentToken });
+
+     if(owner)
+     {
+          console.log("Owner Object")
+          console.log(owner)
+          const projectObject = {
+               Title: req.body.title,
+               Tags: [...req.body.tags],
+               description: req.body.description,
+               Owners: [owner._id],
+               Picture: req.body.picture
+          }
+          console.log(projectObject)
+          const project = new Project(projectObject)
+          console.log("Project Created")
+          await project.save();
+          res.send(true)
+     
+     }
+     else
+     {
+          res.send(403)
+     }
+});
+
 app.patch("/addTeam", async(req, res) => {
-     // patch
-     // check username in project owner
-     // add user to projects team
+     const projectID = req.body.ProjectID
+     const owerID = req.body.OwnerID
+     const userID = req.body.UserID
+
+     const project = await Project.findOne({_id: projectID})
+     const user = await User.findOne({_id: userID })
+
+     if(project && user)
+     {
+          let added = false
+          for( let i = 0; i < project.Owners.length; i++ )
+          {
+               if(project.Owners[i] == owerID)
+               {
+                    added = true
+                    project.Team = [...project.Team, userID]
+                    await project.save()
+               }
+               else if(project.Owners[i] == owerID)
+               {
+                    project.Owners.splice(i,0)
+                    await project.save()
+               }
+          }
+          if(added == false)
+          {
+               res.send(403)
+          }
+          else
+          {
+               res.send("Added")
+          }
+     }
+     else
+     {
+          res.send({status : 404, message: "No user or project"})
+     }
 })
 
 app.patch("/addOwner", async(req, res) => {
      // patch
-     // check username in project owner
-     // add user to projects owners and remove from team    
-})
-//#####################################//
+     const projectID = req.body.ProjectID
+     const owerID = req.body.OwnerID
+     const userID = req.body.UserID
 
+     
 //###### Project Administration #######//
 app.post("/CreateProject", async (req, res) => {
      let SentToken = req.body.token
@@ -245,11 +337,12 @@ app.post("/CreateProject", async (req, res) => {
           Owners: [owner.Username],
           Picture: req.body.picture
      }
-     console.log(projectObject)
-     const project = new Project(projectObject)
-     console.log("Project Created")
-     await project.save();
-     res.send(true)
+     else
+     {
+          res.send({status : 404, message: "No user or project"})
+     }   
+})
+
 
 });
 
@@ -278,6 +371,7 @@ try {
 }
 console.log("Found id")
 })
+
 
 //#####################################//
 
