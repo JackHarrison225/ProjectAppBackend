@@ -241,7 +241,7 @@ app.post("/CreateProject", async (req, res) => {
      const projectObject = {
           Title: req.body.title,
           Tags: [...req.body.tags],
-          description: req.body.description,
+          Description: req.body.description,
           Owners: [owner.Username],
           Picture: req.body.picture
      }
@@ -252,6 +252,33 @@ app.post("/CreateProject", async (req, res) => {
      res.send(true)
 
 });
+
+app.patch("/updateproject", async (req, res) => {
+     let project = await Project.findOne({_id: req.body.id});
+     if (project) {
+          project.Title = req.body.title;
+          project.Tags = req.body.tags;
+          project.Description = req.body.description;
+          project.Picture = req.body.picture;
+          await project.save()
+     } else {
+          res.send(403)
+     }
+
+     console.log("Updated!")
+console.log("Found id")
+})
+
+app.delete("/deleteproject/:id", async (req, res) => {
+try {
+     await Project.findByIdAndDelete(req.params.id);
+     console.log("Deleted!")
+} catch (error) {
+     console.log(error)
+}
+console.log("Found id")
+})
+
 //#####################################//
 
 //####### starting the server #########//
