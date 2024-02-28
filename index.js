@@ -322,38 +322,20 @@ app.patch("/addOwner", async(req, res) => {
      const owerID = req.body.OwnerID
      const userID = req.body.UserID
 
-     const project = await Project.findOne({_id: projectID})
-     const user = await User.findOne({_id: userID })
-
-     if(project && user)
-     {
-          let added = false
-          for( let i = 0; i < project.Owners.length; i++ )
-          {
-               if(project.Owners[i] == owerID)
-               {
-                    added = true
-                    project.Owners = [...project.Owners, userID]
-                    for(let j = 0; j < project.Team.length; j++)
-                    {
-                         if(project.Team[j] == userID)
-                         {
-                              project.Team.splice(j,1)
-                              j = project.Team.length
-                         }
-                    }
-                    await project.save()
-                    i = project.Owners.length
-               }
-          }
-          if(added == false)
-          {
-               res.send(403)
-          }
-          else
-          {
-               res.send("Added")
-          }
+     
+//###### Project Administration #######//
+app.post("/CreateProject", async (req, res) => {
+     let SentToken = req.body.token
+     console.log(SentToken)
+     let owner = await User.findOne({ Token: SentToken });
+     console.log("Owner Object")
+     console.log(owner)
+     const projectObject = {
+          Title: req.body.title,
+          Tags: [...req.body.tags],
+          Description: req.body.description,
+          Owners: [owner.Username],
+          Picture: req.body.picture
      }
      else
      {
@@ -361,15 +343,36 @@ app.patch("/addOwner", async(req, res) => {
      }   
 })
 
-app.delete("/DeleteProject/:id", async (req, res) => {
-     try {
-          await Project.findByIdAndDelete(req.params.id);
-          console.log("Deleted!")
-     } catch (error) {
-          console.log(error)
+
+});
+
+app.patch("/updateproject", async (req, res) => {
+     let project = await Project.findOne({_id: req.body.id});
+     if (project) {
+          project.Title = req.body.title;
+          project.Tags = req.body.tags;
+          project.Description = req.body.description;
+          project.Picture = req.body.picture;
+          await project.save()
+     } else {
+          res.send(403)
      }
-     console.log("Found id")
+
+     console.log("Updated!")
+console.log("Found id")
 })
+
+app.delete("/deleteproject/:id", async (req, res) => {
+try {
+     await Project.findByIdAndDelete(req.params.id);
+     console.log("Deleted!")
+} catch (error) {
+     console.log(error)
+}
+console.log("Found id")
+})
+
+
 //#####################################//
 
 //####### starting the server #########//
