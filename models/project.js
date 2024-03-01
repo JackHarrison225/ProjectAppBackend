@@ -2,11 +2,20 @@ const mongoose = require('mongoose');
 
 const projectSchema = mongoose.Schema({
     	Title: String,
-    	Tags: Array,
+    	Tags: String,
 		Description: String,
-		Owners: Array,
+		Owners: [{
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'User'
+		}],
 		Team: Array,
-		Picture: String
+		Picture: String,
+		Creator: { 
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'User'
+		}
 })
 
 module.exports.Project = mongoose.model('Project', projectSchema)
+
+

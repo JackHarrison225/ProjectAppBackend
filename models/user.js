@@ -7,7 +7,10 @@ const userSchema = mongoose.Schema({
      PFP: String,
      Bio: String,
      Friends: Array, 
-     Projects: Array, 
+     Projects: [{
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Project'
+      }],
      Token: String,
      ExpireDate: Date
 })
