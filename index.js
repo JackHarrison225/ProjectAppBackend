@@ -39,21 +39,33 @@ app.use(async (req, res, next) => {
      const authHeader = req.headers["authorization"];
      console.log("Reading AuthHeader...")
      console.log("The authheader is:", authHeader)
+
+    if (!authHeader) {
+      console.log("Authorization header is missing!")
+      return res.sendStatus(401); 
+    }
+
+  
      const token = authHeader.split(' ')[1]
      console.log("New split header is:", token)
-     const user = await User.findOne({ Token: token });
+
      
      try {
-
+      const user = await User.findOne({ Token: token });
       if (user) {
         console.log("Valid Token")
+        req.user = user;
+        req.token = token
         
         //check expiredate 
         //if fine next
         //if not remove token 
 
         next();
-   } 
+   } else {
+    console.log("Token not found or is invalid")
+    res.sendStatus(403)
+   }
 
      } catch (error) {
       console.log("There was a problem:", error)

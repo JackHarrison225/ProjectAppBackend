@@ -5,22 +5,86 @@ const { User } = require("../models/user");
 
 
 //###### Project Administration #######//
-exports.getProjects = async function (req, res) {
+exports.getCreatedProjects = async function (req, res) {
    
     const userId = req.params.id;
     let userProjects = await Project.find({ Creator : userId})
-    console.log("Project for userid", userId, ":", userProjects)
+    console.log("Created Projects for userid", userId, ":", userProjects)
     res.send(userProjects)
 //     let AllProjects = await Project.findById(req.params.id)
 //     console.log("This should contain projects by id", AllProjects)
 //     res.send(AllProjects)
 }
 
+exports.getSavedProjects = async function(req, res) {
+
+     const userId = req.params.id;
+     try {
+          const userWithSavedProjects = await User.findById(userId).populate('SavedProjects')
+
+          if (!userWithSavedProjects) {
+               return res.status(404).send({message: "User not found"})
+          }
+
+          let savedProjects = userWithSavedProjects.SavedProjects;
+          console.log(`Saved Projects for ${userId} are: ${savedProjects}`)
+          res.send(savedProjects)
+
+     } catch(error) {
+          console.error(`Error retrieving saved projects for user ${userId}`, error)
+          res.status(500).send({message: "Error retrieving saved projects"})
+     }
+
+}
+
+exports.getFavouriteProjects = async function(req, res) {
+
+     const userId = req.params.id;
+     
+     try {
+
+          const userWithFavouriteProjects = await User.findById(userId).populate('FavouriteProjects');
+
+          if(!userWithFavouriteProjects) {
+               res.status(404).send({message: "User not found"})
+          }
+          const favouriteProjects = userWithFavouriteProjects.FavouriteProjects
+          console.log(`Favourite projects for ${userId} are: ${favouriteProjects}`)
+          res.send(favouriteProjects)
+
+     }catch(error) {
+          console.error(`Error retrieving favourite projects for ${userId}`, error)
+          res.status(500).send({message: "Error retrieving favourite projects"})
+     }
+}
+
+exports.getOngoingProjects = async function(req, res) {
+
+     const userId = req.params.id;
+     try {
+          const userWithOngoingProjects = await User.findById(userId).populate('OngoingProjects')
+
+          if(!userWithOngoingProjects) {
+               res.status(404).send({message: "User not found"})
+          }
+
+          const ongoingProjects = userWithOngoingProjects.OngoingProjects
+          console.log(`On going projects for ${userId} are: ${ongoingProjects}`)
+          res.send(ongoingProjects)
+
+     }catch(error) {
+          console.error(`Error retrieving user ${userId} ongoing projects`, error)
+          res.status(500).send({message: "Error retrieving user ongoing projects"})
+     }
+}
+
+
+
 exports.createProjects = async function (req, res) {
     let SentToken = req.body.Token
     console.log("This is the sent token:", SentToken)
-    
-    let creator = await User.findOne({ Token: SentToken });
+
+    const creator = req.user;
 
     console.log("The owner is:", creator)
 
@@ -54,13 +118,14 @@ exports.createProjects = async function (req, res) {
     }
 };
 
-exports.addFavouriteProject = async function(req, res) {
-     const sentToken = req.body.Token
+exports.addToFavouriteProject = async function(req, res) {
+     const {user} = req;
+     let sentToken = req.body.Token
      const projectId = req.params.id
      
      try {
 
-          const user = await User.findOne({ Token: sentToken })
+   
           (console.log(`The user ${user} is adding to their favourite projects`))
           if (!user) {
                return res.status(404).send({message: "user not found"})
@@ -91,14 +156,17 @@ exports.addFavouriteProject = async function(req, res) {
 
 }
 
-exports.addSavedProject = async function (res, res) {
-     const sentToken = req.body.Token
+exports.addToSavedProject = async function (req, res) {
+
+     const {token, user} = req;
+     // let SentToken = req.body.Token
+     console.log("This should hold the user token:", token)
      const projectId = req.params.id
      
      try {
 
-          const user = await User.findOne({ Token: sentToken })
-          (console.log(`The user ${user} is adding to their saved projects`))
+          // const user = await User.findOne({ Token: SentToken })
+          (console.log(`The user ${user.Username} is adding to their saved projects`))
           if (!user) {
                return res.status(404).send({message: "user not found"})
           }
@@ -110,29 +178,30 @@ exports.addSavedProject = async function (res, res) {
 
           const projectIdString = project._id.toString();
 
-          const isDuplicate = user.SavedProjects.some(savedProjectId => savedProjectId.toString === projectIdString)
+          const isDuplicate = user.SavedProjects.some(savedProjectId => savedProjectId.toString() === projectIdString)
 
           if (isDuplicate) {
                return res.status(400).send({message: "Project is already in saved projects."})
           } else {
-               user.SavedProjects.push(project)
+               user.SavedProjects.push(project._id)
                await user.save()
                res.send({message: "Project added to saved projects succesfully"})
+               console.log(`The user ${user.Username} has successfully added a project to their saved projects.`)
           }
 
      } catch(error) {
-          console.error("Error adding project to favourites", error)
-          res.status(500).send({message: "Error adding project to favourites"})
+          console.error("Error adding project to saved projects", error)
+          res.status(500).send({message: "Error adding project to saved projects"})
      } 
 }
 
-exports.addOnGoingProject = async function (req, res) {
-     const sentToken = req.body.Token
-     const projectId = req.params.id
+exports.addToOnGoingProject = async function (req, res) {
+     const {user} = req.user;
+     const projectId = req.params.id;
      
      try {
 
-          const user = await User.findOne({ Token: sentToken })
+       
           (console.log(`The user ${user} is adding to their ongoing projects`))
           if (!user) {
                return res.status(404).send({message: "user not found"})
