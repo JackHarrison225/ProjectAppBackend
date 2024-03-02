@@ -24,10 +24,6 @@ exports.createProjects = async function (req, res) {
 
     console.log("The owner is:", creator)
 
-  
-
-
-
     if(creator)
     {
          console.log("Owner Object")
@@ -45,7 +41,7 @@ exports.createProjects = async function (req, res) {
          console.log("Project Created")
          await project.save();
 
-         creator.Projects.push(project)
+         creator.CreatedProjects.push(project)
          await creator.save()
 
          console.log("Project Created and added to the user");
@@ -57,6 +53,113 @@ exports.createProjects = async function (req, res) {
      res.status(403).send({ message: "Owner not found" });
     }
 };
+
+exports.addFavouriteProject = async function(req, res) {
+     const sentToken = req.body.Token
+     const projectId = req.params.id
+     
+     try {
+
+          const user = await User.findOne({ Token: sentToken })
+          (console.log(`The user ${user} is adding to their favourite projects`))
+          if (!user) {
+               return res.status(404).send({message: "user not found"})
+          }
+
+          const project = await Project.findById(projectId)
+          if (!project) {
+               return res.status(404).send({message: "project not found"})
+          }
+
+          const projectIdString = project._id.toString();
+
+          const isDuplicate = user.FavouriteProjects.some(favouriteProjectId => favouriteProjectId.toString === projectIdString)
+
+          if (isDuplicate) {
+               return res.status(400).send({message: "Project is already in favourites."})
+          } else {
+               user.FavouriteProjects.push(project)
+               await user.save()
+               res.send({message: "Project added to favourites succesfully"})
+          }
+
+     } catch(error) {
+          console.error("Error adding project to favourites", error)
+          res.status(500).send({message: "Error adding project to favourites"})
+     } 
+
+
+}
+
+exports.addSavedProject = async function (res, res) {
+     const sentToken = req.body.Token
+     const projectId = req.params.id
+     
+     try {
+
+          const user = await User.findOne({ Token: sentToken })
+          (console.log(`The user ${user} is adding to their saved projects`))
+          if (!user) {
+               return res.status(404).send({message: "user not found"})
+          }
+
+          const project = await Project.findById(projectId)
+          if (!project) {
+               return res.status(404).send({message: "project not found"})
+          }
+
+          const projectIdString = project._id.toString();
+
+          const isDuplicate = user.SavedProjects.some(savedProjectId => savedProjectId.toString === projectIdString)
+
+          if (isDuplicate) {
+               return res.status(400).send({message: "Project is already in saved projects."})
+          } else {
+               user.SavedProjects.push(project)
+               await user.save()
+               res.send({message: "Project added to saved projects succesfully"})
+          }
+
+     } catch(error) {
+          console.error("Error adding project to favourites", error)
+          res.status(500).send({message: "Error adding project to favourites"})
+     } 
+}
+
+exports.addOnGoingProject = async function (req, res) {
+     const sentToken = req.body.Token
+     const projectId = req.params.id
+     
+     try {
+
+          const user = await User.findOne({ Token: sentToken })
+          (console.log(`The user ${user} is adding to their ongoing projects`))
+          if (!user) {
+               return res.status(404).send({message: "user not found"})
+          }
+
+          const project = await Project.findById(projectId)
+          if (!project) {
+               return res.status(404).send({message: "project not found"})
+          }
+
+          const projectIdString = project._id.toString();
+
+          const isDuplicate = user.OngoingProjects.some(ongoingProjectId => ongoingProjectId.toString === projectIdString)
+
+          if (isDuplicate) {
+               return res.status(400).send({message: "Project is already in ongoing projects."})
+          } else {
+               user.OngoingProjects.push(project)
+               await user.save()
+               res.send({message: "Project added on going projects succesfully"})
+          }
+
+     } catch(error) {
+          console.error("Error adding project to ongoing projets", error)
+          res.status(500).send({message: "Error adding project to ongoing projects"})
+     } 
+}
 
 exports.addToTeam = async function (req, res) {
     const projectID = req.body.ProjectID

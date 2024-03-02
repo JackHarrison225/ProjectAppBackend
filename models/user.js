@@ -6,11 +6,24 @@ const userSchema = mongoose.Schema({
      Password: String,
      PFP: String,
      Bio: String,
-     Friends: Array, 
-     Projects: [{
+     Friends: Array,
+     CreatedProjects: [{
           type: mongoose.Schema.Types.ObjectId,
           ref: 'Project'
       }],
+     OngoingProjects: [{
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Project'
+      }],
+      SavedProjects: [{
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Project'
+      }],
+      FavouriteProjects: [{
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Project'
+      }],
+
      Token: String,
      ExpireDate: Date
 })
