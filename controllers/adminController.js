@@ -16,6 +16,42 @@ exports.getCreatedProjects = async function (req, res) {
 //     res.send(AllProjects)
 }
 
+exports.removeProject = async function(req, res) {
+     const { projectId, categoryName} = req.body;
+     const {user} = req
+     console.log("Trying to remove project", projectId, "from", categoryName)
+
+
+     if (!user) {
+          return res.status(404).send({message: "User not found"})
+     }
+     if (!categoryName || !projectId)  {
+          return res.status(400).send({ message: "Project ID and category are required." });
+     }
+
+     try {
+          if (user[categoryName]) {
+               const index = user[categoryName].indexOf(projectId);
+               if (index > -1) {
+                    user[categoryName].splice(index, 1);
+                    await user.save()
+                    res.send({message: "project removed successfully from " + categoryName})
+               } else {
+                    res.status(404).send({message: "Project nto found in " + categoryName})
+               }
+          } else {
+               res.status(400).send({messge: "Invalid Category"})
+          }
+
+     } catch(error) {
+          console.error(`Error removing project from category`)
+          return res.status(500).send({message: "Error removing project from category"})
+     }
+
+
+
+}
+
 exports.getSavedProjects = async function(req, res) {
 
      const userId = req.params.id;

@@ -12,6 +12,8 @@ router.post("/CreateProject/:id", adminController.createProjects);
 router.post("/addToFavouriteProjects/:id", adminController.addToFavouriteProject)
 router.post("/addToSavedProjects/:id", adminController.addToSavedProject)
 router.post("/addToOngoingProjects/:id", adminController.addToOnGoingProject)
+
+router.patch("/removeProjectFromCategory", adminController.removeProject)
 router.patch("/addOwner", adminController.addProjectOwner)
 router.patch("/addTeam", adminController.addToTeam)
 router.patch("/updateproject", adminController.updateProject)
